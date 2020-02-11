@@ -1,53 +1,51 @@
 #include <ros.h>
-#include <std_msgs/Int8.h>
+#include <light_controller/light_command.h>
 #include <Adafruit_NeoPixel.h>
  
 // Which pin on the Arduino is connected to the NeoPixels?
-#define PIN            6
+#define PIN_1            6
+#define PIN_2            5
  
 // How many NeoPixels are attached to the Arduino?
 #define NUMPIXELS      64
 
-
-#define EMPTY 0 
-#define RED 1 
-#define GREEN 2
-#define YELLOW 3
-
-
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
-
+Adafruit_NeoPixel pixels_1 = Adafruit_NeoPixel(NUMPIXELS, PIN_1, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels_2 = Adafruit_NeoPixel(NUMPIXELS, PIN_2, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel all_pixels[2] = {pixels_1, pixels_2}; 
 
 ros::NodeHandle  nh;
 
-std_msgs::Int8 debug_message; 
-
-void messageCb( const std_msgs::Int8& light_status){
-  
+void light_helper(uint8_t status, Adafruit_NeoPixel& pixels) {
   pixels.clear(); 
   for (int i = 0; i < NUMPIXELS; i++){
-    switch (light_status.data){
-      case EMPTY:
+    switch (status){
+      case light_status.EMPTY:
           break; 
-      case RED:
-          if ((i/8)%3 == 1) {
+      case light_status.RED:
+          if ((i/8)%4 == 2) { //rows
               pixels.setPixelColor(i, pixels.Color(1, 0, 0));}         
           break; 
-      case YELLOW:  
-          if (i%3 == 0) {
+      case light_status.YELLOW:  
+          if (i%4 == 0) { //columns
             pixels.setPixelColor(i, pixels.Color(1, 1, 0));     
           }
           break; 
-      case GREEN:   
-          if (i%5 == 0) {
+      case light_status.GREEN:   
+          if (i%5 == 0) { // no pattern 
             pixels.setPixelColor(i, pixels.Color(0, 1, 0));    
           } 
           break; }
-    
-    pixels.show(); }
+  pixels.show(); 
 }
 
-ros::Subscriber<std_msgs::Int8> sub("/light_controller/light_state", &messageCb );
+void messageCb( const light_controller::light_command& light_status){
+  for (Adafruit_NeoPixel pixels : all_pixels) {
+    light_helper(light_status.light1_status, &pixels); 
+    light_helper(light_status.light2_status, &pixels); 
+    }
+  }
+
+ros::Subscriber<light_controller::light_command> sub("/light_controller/light_state", &messageCb );
 
 int delayval = 10; // delay for half a second
  
@@ -56,49 +54,9 @@ void setup()
   pixels.begin(); // This initializes the NeoPixel library.
   nh.initNode(); 
   nh.subscribe(sub); //the name of the topic from ros_light_controller
-  //Serial.begin(9600);
 }
 
 void loop() {
   nh.spinOnce(); 
-  delay(100);
+  delay(delayval);
 }
-
- 
-
-/**
-void setup(){
-  pixels.begin(); 
-}
-
-
-void loop() {
- 
-  // For a set of NeoPixels the first NeoPixel is 0, second is 1, all the way up to the count of pixels minus one.
- 
-  for(int i=0;i<NUMPIXELS;i++)
-  {
-    // pixels.Color takes RGB values, from 0,0,0 up to 255,255,255
-    pixels.setPixelColor(i, pixels.Color(1,0,0)); // Moderately bright green color.
-    pixels.show(); // This sends the updated pixel color to the hardware.
-    //delay(delayval);
-  }
-  delay(1000);
-  for(int i=0;i<NUMPIXELS;i++)
-  {
-    // pixels.Color takes RGB values, from 0,0,0 up to 255,255,255
-    pixels.setPixelColor(i, pixels.Color(0,1,0)); // Moderately bright green color.
-    pixels.show(); // This sends the updated pixel color to the hardware.
-    //delay(delayval);
-  }
-  delay(1000);
-  for(int i=0;i<NUMPIXELS;i++)
-  {
-    // pixels.Color takes RGB values, from 0,0,0 up to 255,255,255
-    pixels.setPixelColor(i, pixels.Color(0,0,1)); // Moderately bright green color.
-    pixels.show(); // This sends the updated pixel color to the hardware.
-    //delay(delayval);
-  }
-  delay(1000);
-}
-**/
