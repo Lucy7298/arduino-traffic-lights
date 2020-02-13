@@ -15,33 +15,34 @@ Adafruit_NeoPixel all_pixels[2] = {pixels_1, pixels_2};
 
 ros::NodeHandle  nh;
 
-void light_helper(uint8_t status, Adafruit_NeoPixel& pixels) {
+void light_helper(uint8_t status, Adafruit_NeoPixel& pixels, const light_controller::light_command& command) {
   pixels.clear(); 
   for (int i = 0; i < NUMPIXELS; i++){
     switch (status){
-      case light_status.EMPTY:
+      case command.EMPTY:
           break; 
-      case light_status.RED:
+      case command.RED:
           if ((i/8)%4 == 2) { //rows
               pixels.setPixelColor(i, pixels.Color(1, 0, 0));}         
           break; 
-      case light_status.YELLOW:  
+      case command.YELLOW:  
           if (i%4 == 0) { //columns
             pixels.setPixelColor(i, pixels.Color(1, 1, 0));     
           }
           break; 
-      case light_status.GREEN:   
+      case command.GREEN:   
           if (i%5 == 0) { // no pattern 
             pixels.setPixelColor(i, pixels.Color(0, 1, 0));    
           } 
           break; }
+  }
   pixels.show(); 
 }
 
 void messageCb( const light_controller::light_command& light_status){
   for (Adafruit_NeoPixel pixels : all_pixels) {
-    light_helper(light_status.light1_status, &pixels); 
-    light_helper(light_status.light2_status, &pixels); 
+    light_helper(light_status.light1_status, pixels, light_status); 
+    light_helper(light_status.light2_status, pixels, light_status); 
     }
   }
 
@@ -51,7 +52,8 @@ int delayval = 10; // delay for half a second
  
 void setup()
 {
-  pixels.begin(); // This initializes the NeoPixel library.
+  pixels_1.begin(); // This initializes the NeoPixel library.
+  pixels_2.begin(); 
   nh.initNode(); 
   nh.subscribe(sub); //the name of the topic from ros_light_controller
 }
