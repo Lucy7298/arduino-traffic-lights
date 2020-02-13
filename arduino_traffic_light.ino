@@ -11,7 +11,6 @@
 
 Adafruit_NeoPixel pixels_1 = Adafruit_NeoPixel(NUMPIXELS, PIN_1, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel pixels_2 = Adafruit_NeoPixel(NUMPIXELS, PIN_2, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel all_pixels[2] = {pixels_1, pixels_2}; 
 
 ros::NodeHandle  nh;
 
@@ -40,10 +39,8 @@ void light_helper(uint8_t status, Adafruit_NeoPixel& pixels, const light_control
 }
 
 void messageCb( const light_controller::light_command& light_status){
-  for (Adafruit_NeoPixel pixels : all_pixels) {
-    light_helper(light_status.light1_status, pixels, light_status); 
-    light_helper(light_status.light2_status, pixels, light_status); 
-    }
+    light_helper(light_status.light1_status, pixels_1, light_status); 
+    light_helper(light_status.light2_status, pixels_2, light_status); 
   }
 
 ros::Subscriber<light_controller::light_command> sub("/light_controller/light_state", &messageCb );
